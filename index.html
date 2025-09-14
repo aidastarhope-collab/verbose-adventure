@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎉 Birthday Quest</title>
+  <meta name="description" content="A tiny birthday website with mini‑games that unlock heartfelt letters." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0b1020;
+      --bg2: #111735;
+      --card: #151b3a;
+      --ink: #e9ecff;
+      --muted: #b7c0ff;
+      --accent: #8aa2ff;
+      --accent-2: #d7a4ff;
+      --good: #4ade80;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 80% -20%, rgba(138,162,255,.25), transparent 70%),
+        radial-gradient(900px 500px at -10% 20%, rgba(215,164,255,.2), transparent 70%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height:100dvh;
+      letter-spacing:.2px;
+    }
+    a{color:inherit}
+    .wrap{max-width:980px; margin:0 auto; padding:20px 20px 80px}
+
+    header{
+      position:sticky; top:0; z-index:50;
+      background:linear-gradient(180deg, rgba(11,16,32,.9), rgba(11,16,32,.6));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .nav{display:flex; align-items:center; gap:14px; padding:12px 20px; max-width:980px; margin:0 auto}
+    .title{font-family:Poppins, Inter, sans-serif; font-weight:800; letter-spacing:.5px}
+    .spacer{flex:1}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.06); font-size:13px}
+    .chip .dot{width:9px; height:9px; border-radius:50%; background:var(--warn); box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .chip.good .dot{background:var(--good)}
+
+    .tabs{display:flex; gap:10px}
+    .tab{
+      appearance:none; border:none; cursor:pointer; font-weight:600;
+      padding:9px 14px; border-radius:10px; background:rgba(255,255,255,.06); color:var(--ink);
+      transition:transform .15s ease, background .2s ease;
+    }
+    .tab[aria-current="page"]{background:linear-gradient(180deg, rgba(138,162,255,.25), rgba(138,162,255,.12)); box-shadow:var(--shadow)}
+    .tab:hover{transform:translateY(-1px)}
+
+    main{margin-top:18px}
+    section[hidden]{display:none}
+
+    .hero{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:center}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius); padding:26px; box-shadow:var(--shadow)}
+    .card h2{font-family:Poppins, Inter, sans-serif; margin:.2rem 0 1rem; font-size:clamp(28px, 2.3vw, 40px)}
+    .lead{color:var(--muted); line-height:1.6}
+    .cta{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px}
+    .btn{appearance:none; border:none; cursor:pointer; padding:12px 16px; border-radius:12px; font-weight:700}
+    .btn.primary{background:linear-gradient(180deg, #a1b1ff, #8aa2ff); color:#101431}
+    .btn.ghost{background:rgba(255,255,255,.08); color:var(--ink); border:1px solid rgba(255,255,255,.1)}
+
+    .sparkle{
+      font-size:clamp(48px, 6vw, 80px);
+      line-height:1; display:inline-block; filter: drop-shadow(0 8px 20px rgba(138,162,255,.35));
+      animation: floaty 4s ease-in-out infinite;
+    }
+    @keyframes floaty{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    .grid{display:grid; gap:18px}
+    @media(min-width:780px){ .grid.cols-2{grid-template-columns:1fr 1fr} }
+
+    .game-card{position:relative}
+    .badge{position:absolute; top:14px; right:14px; font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.08)}
+    .badge.done{background:rgba(74,222,128,.12); color:#9ae6b4; border-color:rgba(74,222,128,.25)}
+
+    .subtle{color:var(--muted); font-size:14px}
+    .progress{height:8px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden}
+    .progress > span{display:block; height:100%; width:0; background:linear-gradient(90deg, #8aa2ff, #d7a4ff)}
+
+    /* Memory game */
+    .memory{
+      display:grid; grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:10px; margin-top:14px
+    }
+    .card-tile{
+      aspect-ratio:1/1; border-radius:14px; display:grid; place-items:center; font-size:34px; cursor:pointer; user-select:none;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.08);
+      transition: transform .08s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .card-tile:hover{transform:translateY(-1px)}
+    .card-tile.revealed, .card-tile.matched{background:linear-gradient(180deg, rgba(138,162,255,.25), rgba(138,162,255,.08)); box-shadow:0 6px 20px rgba(138,162,255,.2)}
+    .card-tile.matched{outline:2px solid rgba(74,222,128,.35)}
+
+    /* Candle Blitz */
+    .candles{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:12px}
+    .candle{
+      aspect-ratio:3/4; border-radius:16px; display:grid; place-items:center; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.08); position:relative; overflow:hidden; cursor:pointer
+    }
+    .wick{font-size:42px}
+    .flame{position:absolute; top:10%; width:38px; height:38px; border-radius:50%; filter: blur(6px); opacity:0; transition:opacity .12s ease}
+    .lit .flame{opacity:.9; background: radial-gradient(circle at 50% 40%, #ffd966, #ff9f1a 60%, rgba(0,0,0,0) 70%)}
+    .lit{box-shadow:0 10px 30px rgba(255,215,128,.25) inset, 0 0 30px rgba(255,215,128,.25)}
+
+    /* Letters */
+    .letters{display:grid; gap:16px}
+    @media(min-width:760px){ .letters{grid-template-columns:repeat(3, 1fr)} }
+    .letter{
+      padding:16px; border-radius:18px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.08);
+      min-height:220px; position:relative; overflow:hidden
+    }
+    .lock-overlay{
+      position:absolute; inset:0; display:grid; place-items:center; background:rgba(11,16,32,.6); backdrop-filter:blur(2px);
+      border-radius:inherit; border:1px dashed rgba(255,255,255,.2)
+    }
+    .envelope{display:grid; place-items:center; font-size:54px; margin-top:10px}
+    details summary{cursor:pointer; list-style:none}
+    details summary::-webkit-details-marker{display:none}
+
+    footer{margin-top:40px; color:var(--muted); font-size:13px; text-align:center}
+
+    /* Confetti */
+    .confetti{position:fixed; inset:0; pointer-events:none}
+    .confetti span{position:absolute; font-size:22px; animation: fall 1600ms linear forwards}
+    @keyframes fall{ to{ transform: translateY(100vh) rotate(360deg); opacity: .1 } }
+
+    /* Accessibility helpers */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <!--
+    🎁 CUSTOMIZE ME (quick guide)
+    1) Set FRIEND_NAME and FROM_NAME below.
+    2) Edit the three letters in the Letters section (search for LETTER 1 / 2 / 3).
+    3) Optional: tweak emojis in the memory game, and the win target for Candle Blitz.
+    4) Deploy on GitHub Pages (see README steps in your repo).
+  -->
+
+  <header>
+    <nav class="nav" aria-label="Primary">
+      <div class="title">🎂 Birthday&nbsp;Quest</div>
+      <div class="spacer"></div>
+      <div class="chip" id="chip-progress" aria-live="polite"><span class="dot" aria-hidden="true"></span> Progress: <span id="progress-label">0/2</span></div>
+      <div class="tabs" role="tablist">
+        <button class="tab" data-go="#home" aria-current="page" role="tab">Home</button>
+        <button class="tab" data-go="#games" role="tab">Mini‑Games</button>
+        <button class="tab" data-go="#letters" role="tab">Letters</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <main>
+      <!-- HOME -->
+      <section id="home" aria-labelledby="h-home">
+        <div class="hero">
+          <div class="card">
+            <h2 id="h-home"><span class="sparkle" aria-hidden="true">✨</span> Happy Birthday, <span id="friendName"></span>!</h2>
+            <p class="lead" id="leadText">
+              Today is all about you. I made a tiny birthday site: play a couple of mini‑games to unlock three letters from me. 
+              Each letter holds a little piece of what I want to tell you today.
+            </p>
+            <div class="cta">
+              <button class="btn primary" data-go="#games">Start the celebration 🎉</button>
+              <button class="btn ghost" id="resetBtn" title="Clear progress and start over">Reset progress</button>
+            </div>
+            <div style="margin-top:16px">
+              <div class="subtle">Unlock requirement</div>
+              <div class="progress" aria-hidden="true"><span id="bar" style="width:0%"></span></div>
+            </div>
+          </div>
+          <div class="card" aria-live="polite">
+            <div style="font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; font-weight:800">Today’s Vibes</div>
+            <div style="font-size:clamp(38px, 4.4vw, 68px); font-family:Poppins, Inter; font-weight:800; line-height:1.05; margin:.2em 0 .1em">
+              Happy Birthday <span id="bigName"></span> 🥳
+            </div>
+            <p class="lead">
+              You mean a lot to me. I hope this little surprise makes you smile from afar.
+              Ready for your quest?
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- GAMES -->
+      <section id="games" aria-labelledby="h-games" hidden>
+        <div class="grid cols-2">
+          <!-- Memory Match -->
+          <article class="card game-card" aria-labelledby="h-memory">
+            <div class="badge" id="badge-memory">⏳ Not done</div>
+            <h2 id="h-memory">Memory Match</h2>
+            <p class="subtle">Flip the tiles and match all pairs.</p>
+            <div class="memory" id="memoryGrid" role="grid" aria-label="Memory Game"></div>
+            <div class="cta">
+              <button class="btn ghost" id="restartMemory">Restart</button>
+            </div>
+            <p class="subtle" id="memoryStatus" aria-live="polite"></p>
+          </article>
+
+          <!-- Candle Blitz -->
+          <article class="card game-card" aria-labelledby="h-candles">
+            <div class="badge" id="badge-candles">⏳ Not done</div>
+            <h2 id="h-candles">Candle Blitz</h2>
+            <p class="subtle">Blow out (click) <strong id="targetCount">8</strong> candles in <strong>20</strong> seconds.</p>
+            <div class="candles" id="candleGrid" role="group" aria-label="Candle Blitz"></div>
+            <div class="cta">
+              <button class="btn primary" id="startBlitz">Start</button>
+              <button class="btn ghost" id="stopBlitz" disabled>Stop</button>
+            </div>
+            <p class="subtle" id="blitzStatus" aria-live="polite">Score: <strong id="score">0</strong></p>
+          </article>
+        </div>
+      </section>
+
+      <!-- LETTERS -->
+      <section id="letters" aria-labelledby="h-letters" hidden>
+        <article class="card" style="margin-bottom:18px">
+          <h2 id="h-letters">Your Letters</h2>
+          <p class="lead">You unlocked these by finishing the games. Open them when you’re ready. 💌</p>
+        </article>
+        <div class="letters">
+          <!-- Letter 1 -->
+          <article class="letter">
+            <div class="lock-overlay" id="lock1" role="alert" aria-live="polite"><div>🔒 Locked — play the games first!</div></div>
+            <details>
+              <summary><strong>Letter I — Today</strong></summary>
+              <div style="margin-top:10px; color:var(--muted)">
+                <p>
+                  Happy Birthday, <span class="friendNameInline"></span>! I hope your day feels bright, warm, and a little magical.
+                  Even from far away, I’m cheering for you. I’m lucky I get to share little moments with you — the jokes, the late‑night
+                  chats, the quiet check‑ins. They mean more to me than I say out loud.
+                </p>
+                <p>
+                  I wish I could be there to bring cake and steal the first bite, but until then, take this tiny website as a hug in code.
+                  I’m proud of you — of the person you are today and the person you’re becoming.
+                </p>
+              </div>
+            </details>
+            <div class="envelope" aria-hidden="true">✉️</div>
+          </article>
+
+          <!-- Letter 2 -->
+          <article class="letter">
+            <div class="lock-overlay" id="lock2" role="alert" aria-live="polite"><div>🔒 Locked — play the games first!</div></div>
+            <details>
+              <summary><strong>Letter II — Gratitude</strong></summary>
+              <div style="margin-top:10px; color:var(--muted)">
+                <p>
+                  Thank you for being you. For the patience when life gets messy, for the random memes when I need a smile,
+                  and for making distance feel a little smaller. Somehow, talking to you makes my day lighter.
+                </p>
+                <p>
+                  I don’t know what label fits us best right now, but I know this: you’re special to me. And I’m excited to see where this goes —
+                  softly, honestly, and at our own pace.
+                </p>
+              </div>
+            </details>
+            <div class="envelope" aria-hidden="true">💌</div>
+          </article>
+
+          <!-- Letter 3 -->
+          <article class="letter">
+            <div class="lock-overlay" id="lock3" role="alert" aria-live="polite"><div>🔒 Locked — play the games first!</div></div>
+            <details>
+              <summary><strong>Letter III — A Wish</strong></summary>
+              <div style="margin-top:10px; color:var(--muted)">
+                <p>
+                  My wish for you this year: more moments that feel like sun through a window, more laughter you can’t hold in, and more people
+                  who see the good I see in you. And maybe — selfishly — more memories we make together, however and whenever our paths cross.
+                </p>
+                <p>
+                  Until then, I’m here, cheering you on. Happy Birthday, <span class="friendNameInline"></span>. — <span id="fromNameInline"></span>
+                </p>
+              </div>
+            </details>
+            <div class="envelope" aria-hidden="true">📜</div>
+          </article>
+        </div>
+      </section>
+
+      <footer>
+        Made with ❤️ & a little JavaScript • <span id="year"></span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="confetti" aria-hidden="true" id="confetti"></div>
+
+  <span id="gameLive" class="sr-only" aria-live="polite"></span>
+
+  <script>
+    // === QUICK CONFIG ===
+    const FRIEND_NAME = "Alex";           // ← change to your friend's name
+    const FROM_NAME   = "– From me";      // ← change to your name or a signature
+    const TARGET_CANDLES = 8;              // ← Candle Blitz target (default 8)
+
+    // === RUNTIME STATE ===
+    const state = {
+      view: location.hash || '#home',
+      memory: { first: null, lock: false, matched: 0 },
+      blitz: { timer: null, running: false, score: 0, elapsed: 0 },
+      keys: { memory: 'bq_memory_done', blitz: 'bq_blitz_done' }
+    };
+
+    // === UTILITIES ===
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    function go(hash){ location.hash = hash; renderView(hash); }
+    function confettiBurst(n=40){
+      const c = $('#confetti');
+      const bits = ['✨','💖','🎉','⭐','🎊','💫'];
+      const rect = c.getBoundingClientRect();
+      for(let i=0;i<n;i++){
+        const s = document.createElement('span');
+        s.textContent = bits[Math.floor(Math.random()*bits.length)];
+        s.style.left = Math.random()*rect.width + 'px';
+        s.style.top = '-10px';
+        s.style.transform = `translateY(0) rotate(${Math.random()*180}deg)`;
+        s.style.animationDuration = 1000 + Math.random()*1200 + 'ms';
+        c.appendChild(s);
+        setTimeout(()=> s.remove(), 1800);
+      }
+    }
+    function updateNames(){
+      $('#friendName').textContent = FRIEND_NAME;
+      $('#bigName').textContent = FRIEND_NAME;
+      $$('.friendNameInline').forEach(n=> n.textContent = FRIEND_NAME);
+      $('#fromNameInline').textContent = FROM_NAME.replace(/^\s*–?\s*/, '– ');
+    }
+
+    // === NAV ===
+    function renderView(hash){
+      ['#home','#games','#letters'].forEach(id=> $(id).hidden = id !== hash);
+      $$('.tab').forEach(btn=> btn.setAttribute('aria-current', btn.dataset.go===hash ? 'page' : 'false'));
+      if(hash==='#letters') checkLocks();
+    }
+    window.addEventListener('hashchange', ()=> renderView(location.hash||'#home'));
+
+    // === PROGRESS ===
+    function getDone(){
+      return (localStorage.getItem(state.keys.memory) === '1') + (localStorage.getItem(state.keys.blitz) === '1');
+    }
+    function updateProgressUI(){
+      const done = getDone();
+      const pct = (done/2)*100;
+      $('#progress-label').textContent = `${done}/2`;
+      $('#bar').style.width = pct+'%';
+      const chip = $('#chip-progress');
+      chip.classList.toggle('good', done===2);
+      $('#badge-memory').className = 'badge ' + (localStorage.getItem(state.keys.memory)==='1'?'done':'');
+      $('#badge-candles').className = 'badge ' + (localStorage.getItem(state.keys.blitz)==='1'?'done':'');
+    }
+
+    // === MEMORY GAME ===
+    function setupMemory(){
+      const emojis = ['🎈','🎂','🎁','⭐','🍰','🌙','💫','🍀'];
+      const deck = [...emojis, ...emojis]
+        .sort(()=> Math.random() - .5)
+        .map((sym, i)=> ({ id:i, sym, revealed:false, matched:false }));
+      const grid = $('#memoryGrid');
+      grid.innerHTML = '';
+      deck.forEach(card=>{
+        const tile = document.createElement('button');
+        tile.className = 'card-tile';
+        tile.setAttribute('aria-label','Hidden card');
+        tile.setAttribute('data-id', card.id);
+        tile.setAttribute('data-sym', card.sym);
+        tile.textContent = '❓';
+        tile.addEventListener('click', ()=> onFlip(tile));
+        grid.appendChild(tile);
+      });
+      state.memory = { first:null, lock:false, matched:0 };
+      $('#memoryStatus').textContent = '';
+    }
+    function onFlip(tile){
+      if(state.memory.lock || tile.classList.contains('revealed') || tile.classList.contains('matched')) return;
+      tile.classList.add('revealed'); tile.textContent = tile.dataset.sym; tile.setAttribute('aria-label', 'Revealed '+tile.dataset.sym);
+      if(!state.memory.first){
+        state.memory.first = tile; return;
+      }
+      const a = state.memory.first, b = tile; state.memory.lock = true;
+      if(a.dataset.sym === b.dataset.sym){
+        a.classList.add('matched'); b.classList.add('matched');
+        a.setAttribute('aria-label','Matched '+a.dataset.sym); b.setAttribute('aria-label','Matched '+b.dataset.sym);
+        state.memory.matched += 1; announce('Match!');
+        state.memory.first = null; state.memory.lock = false;
+        if(state.memory.matched === 8){
+          localStorage.setItem(state.keys.memory,'1');
+          $('#memoryStatus').textContent = 'All pairs found — well done!';
+          updateProgressUI(); maybeUnlock(); confettiBurst(60);
+        }
+      } else {
+        setTimeout(()=>{
+          a.classList.remove('revealed'); b.classList.remove('revealed');
+          a.textContent = '❓'; b.textContent = '❓';
+          a.setAttribute('aria-label','Hidden card'); b.setAttribute('aria-label','Hidden card');
+          state.memory.first = null; state.memory.lock = false; announce('Try again');
+        }, 700);
+      }
+    }
+
+    // === CANDLE BLITZ ===
+    function setupCandles(){
+      const grid = $('#candleGrid'); grid.innerHTML='';
+      for(let i=0;i<9;i++){
+        const cell = document.createElement('button'); cell.className='candle'; cell.dataset.index=i;
+        const wick = document.createElement('div'); wick.className='wick'; wick.textContent='🕯️';
+        const flame = document.createElement('div'); flame.className='flame';
+        cell.appendChild(wick); cell.appendChild(flame);
+        cell.addEventListener('click', ()=>{
+          if(!state.blitz.running) return;
+          if(cell.classList.contains('lit')){
+            state.blitz.score += 1; $('#score').textContent = state.blitz.score; cell.classList.remove('lit');
+          }
+        })
+        grid.appendChild(cell);
+      }
+      $('#targetCount').textContent = TARGET_CANDLES;
+      $('#score').textContent = '0';
+      $('#blitzStatus').textContent = 'Score: 0';
+    }
+    function randomLight(){
+      const cells = $$('#candleGrid .candle');
+      cells.forEach(c => c.classList.remove('lit'));
+      const idx = Math.floor(Math.random()*cells.length);
+      cells[idx].classList.add('lit');
+    }
+    function startBlitz(){
+      if(state.blitz.running) return;
+      state.blitz.running = true; state.blitz.score = 0; $('#score').textContent = '0';
+      $('#startBlitz').disabled = true; $('#stopBlitz').disabled = false;
+      const t0 = Date.now();
+      const flip = setInterval(randomLight, 550);
+      state.blitz.timer = setInterval(()=>{
+        const sec = Math.floor((Date.now() - t0)/1000);
+        $('#blitzStatus').textContent = `Score: ${state.blitz.score}  •  Time: ${20-sec}s`;
+        if(sec >= 20){
+          clearInterval(state.blitz.timer); clearInterval(flip);
+          state.blitz.running = false; $('#startBlitz').disabled = false; $('#stopBlitz').disabled = true;
+          if(state.blitz.score >= TARGET_CANDLES){
+            localStorage.setItem(state.keys.blitz,'1');
+            $('#blitzStatus').innerHTML = `You did it! Final score: <strong>${state.blitz.score}</strong>`;
+            updateProgressUI(); maybeUnlock(); confettiBurst(60);
+          } else {
+            $('#blitzStatus').innerHTML = `Almost! Final score: <strong>${state.blitz.score}</strong> — try again ✨`;
+          }
+          $$('#candleGrid .candle').forEach(c => c.classList.remove('lit'));
+        }
+      }, 250);
+    }
+    function stopBlitz(){
+      if(!state.blitz.running) return;
+      clearInterval(state.blitz.timer); state.blitz.running = false; $('#startBlitz').disabled = false; $('#stopBlitz').disabled = true;
+      $$('#candleGrid .candle').forEach(c => c.classList.remove('lit'));
+      $('#blitzStatus').textContent = `Stopped. Score: ${state.blitz.score}`;
+    }
+
+    // === LETTER LOCKS ===
+    function checkLocks(){
+      const ok = getDone()===2;
+      ['#lock1','#lock2','#lock3'].forEach(id=> $(id).style.display = ok ? 'none' : 'grid');
+      if(ok) confettiBurst(40);
+    }
+    function maybeUnlock(){ if(getDone()===2){ go('#letters'); } }
+
+    // === A11y announcements ===
+    function announce(msg){ $('#gameLive').textContent = msg; }
+
+    // === RESET ===
+    function resetAll(){
+      localStorage.removeItem(state.keys.memory);
+      localStorage.removeItem(state.keys.blitz);
+      setupMemory(); setupCandles(); updateProgressUI(); checkLocks();
+    }
+
+    // === INIT ===
+    updateNames();
+    setupMemory();
+    setupCandles();
+    updateProgressUI();
+    renderView(state.view);
+    $('#year').textContent = new Date().getFullYear();
+
+    // Events
+    $$('.tab, .btn.primary').forEach(btn=> btn.addEventListener('click', e=> go(btn.dataset.go)));
+    $('#restartMemory').addEventListener('click', setupMemory);
+    $('#startBlitz').addEventListener('click', startBlitz);
+    $('#stopBlitz').addEventListener('click', stopBlitz);
+    $('#resetBtn').addEventListener('click', ()=>{ if(confirm('Reset your progress?')) resetAll(); });
+  </script>
+</body>
+</html>
